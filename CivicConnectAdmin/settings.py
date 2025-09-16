@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-q6#&4-ehc)saa9fr%dhm9hi(0zwhb_5^w1lnmfnzgmf_b&2%#z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['civicconnect-th20.onrender.com']
 
 
 # Application definition
