@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicSetu Admin Login</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --card: #161618;
+      --muted: #8b8b93;
+      --border: #2b2b2f;
+      --primary: #3b82f6;
+      --primary-2: #1d4ed8;
+      --error: #ef4444;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(59,130,246,0.08), transparent),
+                  radial-gradient(1000px 500px at 90% 20%, rgba(139,92,246,0.08), transparent),
+                  var(--bg);
+      color: #eaeaea;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .card {
+      width: 95%;
+      max-width: 440px;
+      background: linear-gradient(135deg, #151519, #1a1b1f);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+    .header {
+      padding: 28px 28px 0 28px;
+    }
+    .logo {
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--muted); margin-top: 6px; font-size: 13px; }
+    .form {
+      padding: 24px 28px 28px 28px;
+      display: grid;
+      gap: 14px;
+    }
+    label { font-weight: 600; font-size: 13px; color: #e0e0e0; }
+    .input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #111114;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: #eaeaea;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+    .btn {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      box-shadow: 0 8px 24px rgba(59,130,246,0.35);
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(59,130,246,0.45); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .row { display: grid; gap: 8px; }
+    .actions { display: grid; gap: 10px; margin-top: 8px; }
+    .oauth { display: grid; gap: 10px; }
+    .oauth .btn { background: #0f1115; border: 1px solid var(--border); box-shadow: none; }
+    .hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 8px; }
+    .error { color: var(--error); font-size: 13px; min-height: 18px; }
+    .success { color: var(--success); font-size: 13px; min-height: 18px; }
+    .footer { text-align: center; padding: 0 28px 22px 28px; color: var(--muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="logo">CivicSetu Admin</div>
+      <div class="subtitle">Sign in with your admin account to continue</div>
+    </div>
+
+    <form class="form" id="loginForm">
+      <div class="row">
+        <label for="email">Email</label>
+        <input class="input" id="email" type="email" placeholder="admin@city.gov" required />
+      </div>
+      <div class="row">
+        <label for="password">Password</label>
+        <input class="input" id="password" type="password" placeholder="••••••••" required />
+      </div>
+      <div class="error" id="error"></div>
+      <button class="btn" id="loginBtn" type="submit">
+        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </button>
+      <div class="hint">Use your Firebase Auth credentials. Only users with role=admin in Firestore can access the dashboard.</div>
+      <div class="hint">New user? <a href="/register/" style="color:#93c5fd; text-decoration:none;">Register</a></div>
+    </form>
+
+    <div class="footer">© CivicSetu</div>
+  </div>
+
+  <!-- Firebase v9 Modular CDN -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+    // Firebase web app config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzXCmqnTaoAs-e6cx0KrPVMiK3csbEtXU",
+      authDomain: "civicconnect-2c5cb.firebaseapp.com",
+      databaseURL: "https://civicconnect-2c5cb-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "civicconnect-2c5cb",
+      storageBucket: "civicconnect-2c5cb.firebasestorage.app",
+      messagingSenderId: "302693887932",
+      appId: "1:302693887932:web:91ffba3826e7aac8ce05b9",
+      measurementId: "G-1T6H99HKK8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const form = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const err = document.getElementById('error');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.textContent = '';
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in...';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      try {
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        const idToken = await cred.user.getIdToken();
+        const formData = new FormData();
+        formData.append('idToken', idToken);
+        const res = await fetch('/auth/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ idToken })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          window.location.href = '/dashboard/';
+        } else {
+          err.textContent = data.error === 'not_admin' ? 'Access denied: not an admin.' : 'Login failed.';
+        }
+      } catch (e) {
+        err.textContent = e.message || 'Authentication failed.';
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

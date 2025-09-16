@@ -1,0 +1,2919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicSetu Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        /* Bottom tray horizontal layout */
+        .bottom-tray {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 10px 16px;
+            background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.6));
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+            overflow-x: auto;
+            overflow-y: hidden;
+            z-index: 1200;
+        }
+        .bottom-tray::-webkit-scrollbar { height: 8px; }
+        .bottom-tray::-webkit-scrollbar-thumb { background: #444; border-radius: 8px; }
+        .tray-item {
+            flex: 0 0 320px;
+            display: flex;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .tray-thumbnail img { width: 90px; height: 70px; object-fit: cover; border-radius: 8px; }
+        .tray-title { font-weight: 600; color: #e0e0e0; margin-bottom: 4px; }
+        .tray-meta { color: #9aa0a6; font-size: 12px; }
+
+        /* Unknown priority marker */
+        .marker-unknown { border-color: #6b7280; color: #9aa0a6; }
+
+        /* Hide scrollbars */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: transparent;
+        }
+
+        * {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0b;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 64px;
+            background: linear-gradient(135deg, #1a1a1b 0%, #2d2d30 100%);
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .hamburger-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            padding: 12px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            color: #e0e0e0;
+        }
+
+        .hamburger-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.05);
+        }
+
+        .search-container {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 24px 0 auto;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 48px 12px 16px;
+            border: 2px solid #444;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.05);
+            color: #e0e0e0;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .search-input::placeholder {
+            color: #888;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 16px;
+        }
+
+        .top-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            font-size: 18px;
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .create-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .create-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        /* User menu dropdown */
+        .user-menu {
+            position: absolute;
+            top: 56px;
+            right: 16px;
+            background: linear-gradient(135deg, #1a1a1b, #2d2d30);
+            border: 1px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            min-width: 160px;
+            padding: 8px 0;
+            z-index: 1200;
+            display: none;
+        }
+        .user-menu.open { display: block; }
+        .user-menu-item {
+            padding: 10px 14px;
+            color: #e0e0e0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .user-menu-item:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: flex;
+            height: calc(100vh - 64px);
+            position: relative;
+        }
+
+        /* Left Sidebar */
+        .left-sidebar {
+            width: 340px;
+            background: linear-gradient(180deg, #1a1a1b 0%, #2d2d30 100%);
+            border-right: 1px solid #333;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            height: 100%;
+            z-index: 900;
+            overflow-y: auto;
+            backdrop-filter: blur(20px);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+        }
+
+        .left-sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid #333;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .app-logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .stats-summary {
+            font-size: 13px;
+            color: #888;
+            opacity: 0.8;
+        }
+
+        .nav-section {
+            padding: 20px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .nav-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #888;
+            padding: 0 24px 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 24px;
+            color: #e0e0e0;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            margin: 2px 12px;
+            border-radius: 8px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+            color: #3b82f6;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .nav-item i {
+            width: 24px;
+            margin-right: 16px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .department-toggles {
+            padding: 20px 24px;
+        }
+
+        .department-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            transition: all 0.3s ease;
+        }
+
+        .department-item:hover {
+            transform: translateX(4px);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            background: #444;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(22px);
+        }
+
+        /* Map Container */
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: #0a0a0b;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+        }
+
+        .map-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .map-control-btn {
+            background: linear-gradient(135deg, #1a1a1b, #2d2d30);
+            border: 1px solid #444;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            color: #e0e0e0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .map-control-btn:hover {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Right Filters Panel */
+        .right-panel {
+            width: 400px;
+            background: linear-gradient(180deg, #1a1a1b 0%, #2d2d30 100%);
+            border-left: 1px solid #333;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            right: 0;
+            height: 100%;
+            z-index: 900;
+            backdrop-filter: blur(20px);
+            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+        }
+
+        .right-panel.open {
+            transform: translateX(0);
+        }
+
+        .panel-header {
+            padding: 24px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .close-panel-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .close-panel-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.1);
+        }
+
+        .filter-section {
+            padding: 24px;
+            border-bottom: 1px solid #333;
+        }
+
+        .filter-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .preset-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #444;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #e0e0e0;
+        }
+
+        .chip.active {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .chip:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #444;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.05);
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+        .filter-input::placeholder {
+            color: #888;
+        }
+
+        .priority-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .priority-badge {
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .priority-very-high { 
+            background: rgba(239, 68, 68, 0.2); 
+            color: #fca5a5; 
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .priority-high { 
+            background: rgba(249, 115, 22, 0.2); 
+            color: #fdba74; 
+            border-color: rgba(249, 115, 22, 0.3);
+        }
+        .priority-medium { 
+            background: rgba(245, 158, 11, 0.2); 
+            color: #fbbf24; 
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        .priority-low { 
+            background: rgba(34, 197, 94, 0.2); 
+            color: #86efac; 
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+        .priority-very-low { 
+            background: rgba(107, 114, 128, 0.2); 
+            color: #d1d5db; 
+            border-color: rgba(107, 114, 128, 0.3);
+        }
+
+        .priority-badge.active {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .priority-badge:not(.active) {
+            opacity: 0.5;
+            filter: grayscale(0.5);
+        }
+
+        .filter-actions {
+            padding: 24px;
+            display: flex;
+            gap: 12px;
+            border-top: 1px solid #333;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .filter-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            color: #e0e0e0;
+            border: 1px solid #444;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+        }
+
+        /* Bottom Tray */
+        .bottom-tray {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 90px;
+            background: linear-gradient(180deg, rgba(26, 26, 27, 0.95), rgba(45, 45, 48, 0.95));
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 16px;
+            overflow-x: auto;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 800;
+            backdrop-filter: blur(20px);
+        }
+
+        .bottom-tray.open {
+            transform: translateY(0);
+        }
+
+        .tray-item {
+            min-width: 240px;
+            height: 70px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .tray-item:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .tray-thumbnail {
+            width: 46px;
+            height: 46px;
+            background: #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            overflow: hidden;
+        }
+
+        .tray-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .tray-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .tray-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #e0e0e0;
+        }
+
+        .tray-meta {
+            font-size: 11px;
+            color: #888;
+            opacity: 0.8;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, #1a1a1b, #2d2d30);
+            border: 1px solid #444;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 1200px;
+            height: 95vh;
+            margin: 5vh auto;
+            transform: scale(0.95);
+            transition: transform 0.3s ease-out;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            flex: 1;
+            color: #e0e0e0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.1);
+        }
+
+        .modal-content {
+            padding: 24px;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 90px;
+            right: 24px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            background: linear-gradient(135deg, #1a1a1b, #2d2d30);
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 320px;
+            transform: translateX(100%);
+            animation: slideIn 0.4s ease forwards;
+            backdrop-filter: blur(10px);
+        }
+
+        .toast.success { 
+            border-left: 4px solid #22c55e; 
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.2);
+        }
+        .toast.error { 
+            border-left: 4px solid #ef4444; 
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
+        }
+        .toast.info { 
+            border-left: 4px solid #3b82f6; 
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        }
+
+        @keyframes slideIn {
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        /* Custom Marker Styles */
+        .custom-marker {
+            background: linear-gradient(135deg, #1a1a1b, #2d2d30);
+            border: 3px solid;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        .custom-marker:hover {
+            transform: scale(1.15);
+            z-index: 1000;
+        }
+
+        .marker-very-high { border-color: #ef4444; color: #ef4444; }
+        .marker-high { border-color: #f97316; color: #f97316; }
+        .marker-medium { border-color: #f59e0b; color: #f59e0b; }
+        .marker-low { border-color: #22c55e; color: #22c55e; }
+        .marker-very-low { border-color: #6b7280; color: #6b7280; }
+
+        .cluster-marker {
+            background: linear-gradient(135deg, #1a1a1b, #2d2d30);
+            border: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 54px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: #3b82f6;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .cluster-marker:hover {
+            transform: scale(1.2);
+            z-index: 1000;
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .cluster-priority-ring {
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #ef4444 0% 25%,
+                #f97316 25% 50%,
+                #f59e0b 50% 75%,
+                #22c55e 75% 100%
+            );
+            z-index: -1;
+            opacity: 0.8;
+        }
+
+        /* Cluster Detail Panel */
+        .cluster-detail-panel {
+            position: absolute;
+            top: 57%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            max-width: 800px;
+            max-height: 80vh;
+            background: linear-gradient(135deg, #1a1a1b, #2d2d30);
+            border: 1px solid #444;
+            border-radius: 16px;
+            z-index: 1500;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            transition: all 0.4s ease;
+        }
+
+        .cluster-header {
+            padding: 24px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .cluster-info h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #e0e0e0;
+            margin-bottom: 8px;
+        }
+
+        .cluster-meta {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            padding: 24px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .report-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            height: 340px;
+        }
+
+        .report-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-color: #3b82f6;
+        }
+
+        .report-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            background: #333;
+        }
+
+        .report-content {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+        }
+
+        .report-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #e0e0e0;
+            line-height: 1.4;
+        }
+
+        .report-description {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .report-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .report-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #888;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-assign {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+        }
+
+        .btn-assign:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-details {
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+            border: 1px solid #444;
+        }
+
+        .btn-details:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Enhanced animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.6); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes slideOut {
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* Popup styles */
+        .leaflet-popup-content-wrapper {
+            background: linear-gradient(135deg, #1a1a1b, #2d2d30);
+            border: 1px solid #444;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        .leaflet-popup-content {
+            color: #e0e0e0;
+            margin: 0;
+        }
+
+        .leaflet-popup-tip {
+            background: #1a1a1b;
+            border: 1px solid #444;
+        }
+
+        .popup-content {
+            padding: 16px;
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .popup-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e0e0e0;
+            flex: 1;
+            margin-right: 12px;
+        }
+
+        .popup-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .popup-description {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .popup-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        .popup-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .popup-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .popup-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .popup-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .popup-btn.secondary {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #444;
+        }
+
+        .popup-btn.secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Report Detail Modal Content */
+        .report-detail {
+            padding: 0;
+        }
+
+        .report-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .report-detail-image {
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .report-section {
+            margin-bottom: 24px;
+        }
+
+        .report-section h4 {
+            margin-bottom: 12px;
+            font-size: 18px;
+            color: #e0e0e0;
+            font-weight: 600;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            font-size: 14px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            color: #e0e0e0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        /* Form styles */
+        .create-report-form {
+            max-width: 600px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        .form-group input[type="file"] {
+            padding: 8px 0;
+        }
+
+        .notifications-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            border-bottom: 1px solid #333;
+            align-items: flex-start;
+            transition: all 0.3s ease;
+        }
+
+        .notification-item:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item i {
+            font-size: 20px;
+            margin-top: 4px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #e0e0e0;
+        }
+
+        .notification-message {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        .notification-time {
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .right-panel {
+                width: 360px;
+            }
+            .left-sidebar {
+                width: 320px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .reports-grid {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .top-controls .control-btn:not(.create-btn) {
+                display: none;
+            }
+            
+            .top-bar {
+                padding: 0 12px;
+            }
+            
+            .search-container {
+                margin: 0 12px;
+            }
+            
+            .modal {
+                width: 95vw;
+                margin: 0 auto;
+            }
+            
+            .cluster-detail-panel {
+                width: 95vw;
+            }
+            
+            .filter-btn {
+                padding: 10px 12px;
+            }
+            
+            .left-sidebar, .right-panel {
+                width: 100%;
+            }
+        }
+
+        /* Loading states */
+        .loading-spinner {
+            border: 3px solid #333;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Custom map tiles for dark theme */
+        .leaflet-tile-pane {
+            filter: invert(1) hue-rotate(180deg);
+        }
+
+        .leaflet-control-zoom {
+            display: none !important;
+        }
+
+        .leaflet-control-attribution {
+            background: rgba(26, 26, 27, 0.8) !important;
+            color: #888 !important;
+            border: 1px solid #333 !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <button class="hamburger-btn" onclick="toggleLeftSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search places, addresses, report IDs...">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+        
+        <div class="top-controls">
+            <button class="control-btn" onclick="toggleFilters()">
+                <i class="fas fa-filter"></i>
+            </button>
+            
+            <button class="control-btn" onclick="showNotifications()">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">7</span>
+            </button>
+            
+            <button class="control-btn" onclick="toggleLayers()">
+                <i class="fas fa-layer-group"></i>
+            </button>
+            
+            <button class="control-btn">
+                <i class="fas fa-cog"></i>
+            </button>
+            
+            <button class="create-btn" onclick="createManualReport()">
+                <i class="fas fa-plus"></i> Create Report
+            </button>
+            
+            <button class="control-btn" id="userBtn" onclick="toggleUserMenu(event)">
+                <i class="fas fa-user-circle"></i>
+            </button>
+            <div class="user-menu" id="userMenu">
+                <div class="user-menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar" id="leftSidebar">
+            <div class="sidebar-header">
+                <div class="app-logo">CivicSetu</div>
+                <div class="stats-summary">2,847 open reports • 47 high priority • 12 departments active</div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-title">Navigation</div>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-map"></i>
+                    Map View
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-list"></i>
+                    Reports
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-tasks"></i>
+                    Assignments
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-building"></i>
+                    Departments
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    Analytics
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-history"></i>
+                    Audit Logs
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-title">Quick Actions</div>
+                <a href="#" class="nav-item" onclick="createManualReport()">
+                    <i class="fas fa-plus"></i>
+                    Create Report
+                </a>
+                <a href="#" class="nav-item" onclick="bulkAssign()">
+                    <i class="fas fa-user-plus"></i>
+                    Bulk Assign
+                </a>
+                <a href="#" class="nav-item" onclick="exportData()">
+                    <i class="fas fa-download"></i>
+                    Export Data
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-title">Department Visibility</div>
+                <div class="department-toggles">
+                    <div class="department-item">
+                        <span>Roads & Transport</span>
+                        <div class="toggle-switch active" onclick="toggleDepartment(this, 'roads')">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="department-item">
+                        <span>Water & Sewage</span>
+                        <div class="toggle-switch active" onclick="toggleDepartment(this, 'water')">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="department-item">
+                        <span>Waste Management</span>
+                        <div class="toggle-switch active" onclick="toggleDepartment(this, 'waste')">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="department-item">
+                        <span>Public Lighting</span>
+                        <div class="toggle-switch active" onclick="toggleDepartment(this, 'lighting')">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="department-item">
+                        <span>Parks & Recreation</span>
+                        <div class="toggle-switch active" onclick="toggleDepartment(this, 'parks')">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-container">
+            <div id="map"></div>
+            
+            <!-- Map Controls -->
+            <div class="map-controls">
+                <button class="map-control-btn" onclick="zoomIn()" title="Zoom In">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="map-control-btn" onclick="zoomOut()" title="Zoom Out">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="map-control-btn" onclick="locateUser()" title="My Location">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
+                <button class="map-control-btn" onclick="toggleHeatmap()" title="Heatmap">
+                    <i class="fas fa-fire"></i>
+                </button>
+                <button class="map-control-btn" onclick="measureDistance()" title="Measure">
+                    <i class="fas fa-ruler"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Filters Panel -->
+        <div class="right-panel" id="rightPanel">
+            <div class="panel-header">
+                <h2 class="panel-title">Filters</h2>
+                <button class="close-panel-btn" onclick="toggleFilters()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Quick Presets</div>
+                <div class="preset-chips">
+                    <div class="chip active" onclick="applyPreset(this, 'high-priority')">High Priority</div>
+                    <div class="chip" onclick="applyPreset(this, 'today')">Today</div>
+                    <div class="chip" onclick="applyPreset(this, 'unassigned')">Unassigned</div>
+                    <div class="chip" onclick="applyPreset(this, 'potholes')">Potholes</div>
+                    <div class="chip" onclick="applyPreset(this, 'last-7-days')">Last 7 Days</div>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Location</div>
+                <input type="text" class="filter-input" placeholder="Enter area, ward, or coordinates">
+                <select class="filter-input">
+                    <option>All Wards</option>
+                    <option>Ward 1 - Central Business District</option>
+                    <option>Ward 2 - North Residential</option>
+                    <option>Ward 3 - South Industrial</option>
+                    <option>Ward 4 - East Commercial</option>
+                    <option>Ward 5 - West Suburban</option>
+                </select>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Date Range</div>
+                <input type="date" class="filter-input" value="2024-01-01">
+                <input type="date" class="filter-input" value="2024-12-31">
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Issue Type</div>
+                <div class="preset-chips">
+                    <div class="chip active" onclick="toggleFilter(this)">Potholes</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Street Lights</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Garbage</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Water Issues</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Traffic</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Parks</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Other</div>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Priority Level</div>
+                <div class="priority-badges">
+                    <div class="priority-badge priority-very-high active" onclick="togglePriority(this)">Very High</div>
+                    <div class="priority-badge priority-high active" onclick="togglePriority(this)">High</div>
+                    <div class="priority-badge priority-medium active" onclick="togglePriority(this)">Medium</div>
+                    <div class="priority-badge priority-low active" onclick="togglePriority(this)">Low</div>
+                    <div class="priority-badge priority-very-low active" onclick="togglePriority(this)">Very Low</div>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Status</div>
+                <select class="filter-input">
+                    <option>All Statuses</option>
+                    <option>Pending</option>
+                    <option>Acknowledged</option>
+                    <option>In Progress</option>
+                    <option>Resolved</option>
+                </select>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Assignment</div>
+                <select class="filter-input">
+                    <option>All Reports</option>
+                    <option>Assigned</option>
+                    <option>Unassigned</option>
+                    <option>Assigned to Me</option>
+                </select>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Report Source</div>
+                <div class="preset-chips">
+                    <div class="chip active" onclick="toggleFilter(this)">Android</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Web</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Phone</div>
+                    <div class="chip active" onclick="toggleFilter(this)">Manual</div>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">AI Confidence</div>
+                <input type="range" class="filter-input" min="0" max="100" value="50" 
+                       oninput="updateConfidenceLabel(this.value)">
+                <small id="confidenceLabel" style="color: #888;">Minimum confidence: 50%</small>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Cluster Radius</div>
+                <div class="preset-chips">
+                    <div class="chip cluster-radius-chip active" data-m="3" onclick="setClusterRadius(3)">3 m</div>
+                    <div class="chip cluster-radius-chip" data-m="5" onclick="setClusterRadius(5)">5 m</div>
+                    <div class="chip cluster-radius-chip" data-m="10" onclick="setClusterRadius(10)">10 m</div>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">Text Search</div>
+                <input type="text" class="filter-input" placeholder="Search in descriptions, keywords...">
+            </div>
+            
+            <div class="filter-actions">
+                <button class="filter-btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+                <button class="filter-btn btn-secondary" onclick="resetFilters()">Reset</button>
+                <button class="filter-btn btn-secondary" onclick="saveFilter()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Tray -->
+    <div class="bottom-tray" id="bottomTray"></div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Report Details</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content" id="modalContent">
+                <!-- Modal content will be dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <!-- Firebase v9 Modular for Firestore Realtime -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getFirestore, collection, query, orderBy, onSnapshot, limit as fbLimit, doc, getDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyAzXCmqnTaoAs-e6cx0KrPVMiK3csbEtXU",
+          authDomain: "civicconnect-2c5cb.firebaseapp.com",
+          databaseURL: "https://civicconnect-2c5cb-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "civicconnect-2c5cb",
+          storageBucket: "civicconnect-2c5cb.firebasestorage.app",
+          messagingSenderId: "302693887932",
+          appId: "1:302693887932:web:91ffba3826e7aac8ce05b9",
+          measurementId: "G-1T6H99HKK8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const dbClient = getFirestore(app);
+
+        function normalizeReport(doc) {
+            const d = doc.data() || {};
+            const out = { ...d, id: doc.id };
+            // timestamps
+            // Convert Firestore Timestamp objects to ISO strings
+            const tsCandidates = ['created_at', 'timestamp'];
+            tsCandidates.forEach(k => {
+                const v = out[k];
+                if (v && typeof v.toDate === 'function') {
+                    out[k] = v.toDate().toISOString();
+                }
+            });
+            if (!out.created_at && out.timestamp) out.created_at = out.timestamp;
+            // lat/lng from string "lat,lng"
+            const loc = out.location;
+            if (typeof loc === 'string' && loc.includes(',')) {
+                try {
+                    const [la, ln] = loc.split(',');
+                    out.lat = parseFloat(la.trim());
+                    out.lng = parseFloat(ln.trim());
+                } catch {}
+            } else if (loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+                out.lat = loc.latitude; out.lng = loc.longitude;
+            }
+            // fallbacks
+            if (!out.image_url && out.image) out.image_url = out.image;
+            if (!out.user_description && out.description) out.user_description = out.description;
+            if (!out.title) {
+                const kw = Array.isArray(out.keywords) ? out.keywords : [];
+                out.title = kw.length ? kw.join(', ') : `${(out.department||'report')}`;
+            }
+            // default priority
+            if (!out.priority) out.priority = 'unknown';
+            // normalize fields for filtering
+            if (out.priority) out.priority = String(out.priority).toLowerCase();
+            if (out.department) out.department = String(out.department).toLowerCase();
+            return out;
+        }
+
+        window.setupRealtimeReports = function() {
+            let welcomed = false;
+            let initialized = false; // to detect initial snapshot vs new changes
+            const q = query(collection(dbClient, 'reports'), orderBy('created_at', 'desc'), fbLimit(200));
+            onSnapshot(q, async (snapshot) => {
+                let items = snapshot.docs.map(normalizeReport);
+                // Enrich reporter_name from users collection
+                const ids = Array.from(new Set(items.map(r => r.user_id).filter(Boolean)));
+                const nameCache = {};
+                await Promise.all(ids.map(async (uid) => {
+                    try {
+                        const uref = doc(dbClient, 'users', uid);
+                        const usnap = await getDoc(uref);
+                        if (usnap.exists()) {
+                            const u = usnap.data();
+                            nameCache[uid] = u?.name || null;
+                        }
+                    } catch {}
+                }));
+                items = items.map(r => ({ ...r, reporter_name: nameCache[r.user_id] || r.reporter_name || 'Unknown' }));
+                // Ensure globals and sync with non-module script vars
+                if (!window.sampleReports) window.sampleReports = [];
+                if (!window.activeFilters) window.activeFilters = { priority: ['very-high','high','medium','low','very-low'], departments: [], status: 'all', assignment: 'all' };
+                const prevCount = window.sampleReports.length;
+                window.sampleReports = items;
+                try { if (typeof sampleReports !== 'undefined') { sampleReports = items; } } catch {}
+                try { if (typeof activeFilters !== 'undefined') { activeFilters = window.activeFilters; } } catch {}
+                // auto include departments visible
+                const depts = Array.from(new Set((items||[]).map(r => (r.department||'').toLowerCase()).filter(Boolean)));
+                const set = new Set([...(window.activeFilters && window.activeFilters.departments ? window.activeFilters.departments : []), ...depts]);
+                window.activeFilters.departments = Array.from(set);
+                try { if (typeof activeFilters !== 'undefined') { activeFilters.departments = window.activeFilters.departments; } } catch {}
+                // refresh UI
+                if (typeof addMarkersToMap === 'function') addMarkersToMap();
+                if (typeof rebuildBottomTray === 'function') rebuildBottomTray();
+                // open tray if it has content but is closed
+                const trayEl = document.getElementById('bottomTray');
+                if (trayEl && items.length > 0 && !window.isBottomTrayOpen) {
+                    if (typeof toggleBottomTray === 'function') toggleBottomTray(true);
+                }
+                // welcome toast once
+                if (!welcomed) {
+                    const todayCount = (items||[]).filter(r => {
+                        const t = new Date(r.created_at || r.timestamp || 0);
+                        const now = new Date();
+                        return t.getFullYear()===now.getFullYear() && t.getMonth()===now.getMonth() && t.getDate()===now.getDate();
+                    }).length;
+                    if (typeof showToast === 'function') {
+                        showToast(`Welcome to Civic Connect Admin Dashboard — ${todayCount} reports today`, 'success');
+                    }
+                    welcomed = true;
+                }
+                // Notify only for actual new/changed/removed after initial snapshot
+                const changes = snapshot.docChanges();
+                if (initialized && typeof showToast === 'function') {
+                    changes.forEach(ch => {
+                        if (ch.type === 'added') {
+                            const r = normalizeReport(ch.doc);
+                            showToast(`New report: ${r.title || 'Report'}`, 'info');
+                        } else if (ch.type === 'modified') {
+                            const r = normalizeReport(ch.doc);
+                            showToast(`Report updated: ${r.title || 'Report'}`, 'info');
+                        } else if (ch.type === 'removed') {
+                            showToast('Report removed', 'info');
+                        }
+                    });
+                }
+                initialized = true;
+                // fit bounds on first data or count change
+                if (typeof fitMapToReports === 'function') {
+                    if (window.firstDataLoad || prevCount !== items.length) {
+                        fitMapToReports();
+                        window.firstDataLoad = false;
+                        window.previousReportCount = items.length;
+                    }
+                }
+                console.log(`Realtime: received ${items.length} reports`);
+            }, (err) => {
+                console.error('Firestore listener error', err);
+                // show error only if no data at all
+                if (!window.sampleReports || window.sampleReports.length === 0) {
+                    if (typeof showToast === 'function') showToast('Error loading reports', 'error');
+                }
+            });
+        }
+
+        // Firestore create report helper
+        window.createReportInFirestore = async function(report) {
+            const payload = { ...report };
+            // Ensure normalized fields
+            if (payload.priority == null || payload.priority === '') payload.priority = 'unknown';
+            if (payload.department != null) payload.department = String(payload.department).toLowerCase();
+            payload.created_at = serverTimestamp();
+            // Make sure location exists (string or lat/lng string)
+            if (!payload.location && payload.lat && payload.lng) {
+                payload.location = `${payload.lat},${payload.lng}`;
+            }
+            await addDoc(collection(dbClient, 'reports'), payload);
+        }
+    </script>
+    
+    <script>
+        // Global variables
+        let map;
+        let markers = [];
+        let clusterMarkers = [];
+        let activeFilters = {
+            priority: ['very-high', 'high', 'medium', 'low', 'very-low'],
+            departments: ['roads', 'water', 'waste', 'lighting', 'parks', 'electrical'],
+            status: 'all',
+            assignment: 'all'
+        };
+        let isLeftSidebarOpen = false;
+        let isRightPanelOpen = false;
+        let isBottomTrayOpen = true;
+        let firstDataLoad = true;
+        let previousReportCount = 0;
+        let clusterRadiusMeters = 3;
+
+        // Reports will be populated dynamically from backend API
+        let sampleReports = [];
+
+        async function fetchReports() {
+            try {
+                const res = await fetch('/api/reports/', { credentials: 'same-origin' });
+                const data = await res.json();
+                if (data.ok) {
+                    sampleReports = data.items || [];
+                    // Auto-include all departments present in data so nothing is hidden by default
+                    const depts = Array.from(new Set((sampleReports||[]).map(r => r.department).filter(Boolean)));
+                    const set = new Set([...(activeFilters.departments||[]), ...depts]);
+                    activeFilters.departments = Array.from(set);
+                    addMarkersToMap();
+                    // Fit map to visible reports on first load or when count changes
+                    if (firstDataLoad || (sampleReports.length !== previousReportCount)) {
+                        fitMapToReports();
+                        // Show welcome message with today's count once
+                        const todayCount = (sampleReports||[]).filter(r => {
+                            const t = new Date(r.created_at || r.timestamp || 0);
+                            const now = new Date();
+                            return t.getFullYear()===now.getFullYear() && t.getMonth()===now.getMonth() && t.getDate()===now.getDate();
+                        }).length;
+                        showToast(`Welcome to Civic Connect Admin Dashboard — ${todayCount} reports today`, 'success');
+                        firstDataLoad = false;
+                        previousReportCount = sampleReports.length;
+                    }
+                    rebuildBottomTray();
+                    // Optional info toast can be noisy; keep silent here
+                } else {
+                    if (!sampleReports || sampleReports.length === 0) {
+                        showToast('Failed to load reports', 'error');
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                if (!sampleReports || sampleReports.length === 0) {
+                    showToast('Error loading reports', 'error');
+                }
+            }
+        }
+
+        // Clusters are disabled for dynamic data initially
+        const clusters = {};
+
+        // Initialize the map
+        function initMap() {
+            map = L.map('map').setView([28.6139, 77.2090], 14);
+            
+            // Use dark-themed tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Markers will be added after reports are fetched
+            
+            // Show bottom tray by default after a delay
+            setTimeout(() => {
+                toggleBottomTray(true);
+            }, 1500);
+        }
+
+        // Haversine distance (meters)
+        function distanceMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // meters
+            const toRad = (d) => d * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Build clusters from a list of reports within N meters
+        function buildClusters(reports, radiusMeters = clusterRadiusMeters) {
+            const out = {};
+            const used = new Set();
+            let idx = 1;
+            for (let i = 0; i < reports.length; i++) {
+                if (used.has(i)) continue;
+                const seed = reports[i];
+                let cluster = {
+                    id: `C${idx++}`,
+                    lat: seed.lat,
+                    lng: seed.lng,
+                    reports: [seed],
+                    address: seed.city || 'Cluster'
+                };
+                used.add(i);
+                // Attach neighbors within radius and update centroid
+                for (let j = i + 1; j < reports.length; j++) {
+                    if (used.has(j)) continue;
+                    const r = reports[j];
+                    const d = distanceMeters(cluster.lat, cluster.lng, r.lat, r.lng);
+                    if (d <= radiusMeters) {
+                        cluster.reports.push(r);
+                        used.add(j);
+                        // Recompute centroid as simple average
+                        const n = cluster.reports.length;
+                        cluster.lat = (cluster.lat * (n - 1) + r.lat) / n;
+                        cluster.lng = (cluster.lng * (n - 1) + r.lng) / n;
+                    }
+                }
+                out[cluster.id] = cluster;
+            }
+            return out;
+        }
+
+        // Add markers to map with proximity clustering
+        function addMarkersToMap() {
+            // Clear existing markers from map
+            markers.forEach(m => map.removeLayer(m));
+            clusterMarkers.forEach(m => map.removeLayer(m));
+            markers = [];
+            clusterMarkers = [];
+
+            // Determine visible reports by filters and ensure coordinates exist
+            if (!window.activeFilters && typeof activeFilters !== 'undefined') { window.activeFilters = activeFilters; }
+            const visible = ((window.sampleReports || sampleReports || [])).filter(r => r.lat && r.lng && shouldShowReport(r));
+
+            // Build clusters by selected radius
+            const built = buildClusters(visible, clusterRadiusMeters);
+            // Update global clusters object for other UI (popups, details)
+            for (const k in clusters) delete clusters[k];
+            Object.assign(clusters, built);
+
+            // Render: clusters with >1 items as cluster markers; singletons as individual markers
+            Object.values(clusters).forEach(cluster => {
+                if (cluster.reports.length > 1) {
+                    const marker = createClusterMarker(cluster);
+                    clusterMarkers.push(marker);
+                    map.addLayer(marker);
+                } else if (cluster.reports.length === 1) {
+                    const report = cluster.reports[0];
+                    const marker = createMarker(report);
+                    markers.push(marker);
+                    map.addLayer(marker);
+                }
+            });
+        }
+
+        // Rebuild bottom tray with latest 10
+        function rebuildBottomTray() {
+            const tray = document.getElementById('bottomTray');
+            if (!tray) return;
+            const items = [...(sampleReports||[])].sort((a,b)=>{
+                const ta = new Date(a.created_at || a.timestamp || 0).getTime();
+                const tb = new Date(b.created_at || b.timestamp || 0).getTime();
+                return tb - ta;
+            }).slice(0,10);
+            const html = items.map(r => {
+                const img = r.image_url || r.image || 'https://via.placeholder.com/300x200?text=Report';
+                const title = r.title || (Array.isArray(r.keywords) ? r.keywords.join(', ') : 'Report');
+                const who = r.reporter_name || 'Unknown';
+                const where = r.city || (typeof r.location === 'string' ? r.location : '') || '';
+                const when = timeAgo(r.created_at || r.timestamp);
+                const meta = `${when} • ${who} • ${where}`;
+                return `
+                    <div class="tray-item" onclick="openReportDetail('${r.id}')">
+                        <div class="tray-thumbnail"><img src="${img}" alt="thumb"></div>
+                        <div class="tray-content">
+                            <div class="tray-title">${escapeHtml(title)}</div>
+                            <div class="tray-meta">${meta}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+            tray.innerHTML = html;
+        }
+
+        // Cluster radius UI control
+        function setClusterRadius(m) {
+            clusterRadiusMeters = m;
+            document.querySelectorAll('.cluster-radius-chip').forEach(el=>{
+                el.classList.toggle('active', Number(el.dataset.m)==m);
+            });
+            addMarkersToMap();
+        }
+
+        function formatTrayMeta(r) {
+            const when = timeAgo(r.created_at || r.timestamp);
+            const where = r.location || r.city || '';
+            const pr = (r.priority || '').replace(/-/g, ' ');
+            return `${when} • ${where} • ${capitalize(pr || 'priority')}`;
+        }
+
+        function timeAgo(ts) {
+            const d = ts instanceof Date ? ts : new Date(ts || Date.now());
+            const diff = Math.max(0, (Date.now() - d.getTime()) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff/60)} min ago`;
+            if (diff < 86400) return `${Math.floor(diff/3600)} hr ago`;
+            return `${Math.floor(diff/86400)} d ago`;
+        }
+
+        // Backwards compatibility helper where code calls getTimeAgo
+        function getTimeAgo(ts) {
+            return timeAgo(ts);
+        }
+
+        function capitalize(s){ return (s||'').charAt(0).toUpperCase()+ (s||'').slice(1); }
+
+        function escapeHtml(unsafe) {
+            return String(unsafe || '').replace(/[&<>"]+/g, function (m) {
+                return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]);
+            });
+        }
+        
+
+        // Create cluster marker
+        function createClusterMarker(cluster) {
+            const count = cluster.reports.length;
+            const highestPriority = getHighestPriority(cluster.reports);
+            
+            const markerHtml = `
+                <div class="cluster-marker">
+                    <div class="cluster-priority-ring"></div>
+                    ${count}
+                </div>
+            `;
+
+            const customIcon = L.divIcon({
+                html: markerHtml,
+                className: 'custom-marker-container',
+                iconSize: [54, 54],
+                iconAnchor: [27, 27]
+            });
+
+            const marker = L.marker([cluster.lat, cluster.lng], { icon: customIcon });
+            
+            // Add popup for cluster
+            const popupContent = createClusterPopupContent(cluster);
+            marker.bindPopup(popupContent, {
+                maxWidth: 350,
+                className: 'custom-popup'
+            });
+
+            // Add click handler to show cluster detail
+            marker.on('click', () => {
+                openClusterDetail(cluster);
+            });
+
+            return marker;
+        }
+
+        // Create individual report marker
+        function createMarker(report) {
+            const priorityClass = `marker-${report.priority}`;
+            
+            const markerHtml = `<div class="custom-marker ${priorityClass}">1</div>`;
+
+            const customIcon = L.divIcon({
+                html: markerHtml,
+                className: 'custom-marker-container',
+                iconSize: [36, 36],
+                iconAnchor: [18, 18]
+            });
+
+            const marker = L.marker([report.lat, report.lng], { icon: customIcon });
+            
+            // Add popup
+            const popupContent = createPopupContent(report);
+            marker.bindPopup(popupContent, {
+                maxWidth: 320,
+                className: 'custom-popup'
+            });
+
+            // Add click handler
+            marker.on('click', () => {
+                openReportDetail(report);
+            });
+
+            return marker;
+        }
+
+        // Create cluster popup content
+        function createClusterPopupContent(cluster) {
+            const count = cluster.reports.length;
+            const highestPriority = getHighestPriority(cluster.reports);
+            const latestReport = cluster.reports.reduce((latest, report) => 
+                report.timestamp > latest.timestamp ? report : latest
+            );
+            const timeAgo = getTimeAgo(latestReport.timestamp || latestReport.created_at);
+            
+            return `
+                <div class="popup-content">
+                    <div class="popup-header">
+                        <h4>Cluster: ${cluster.address}</h4>
+                        <span class="priority-badge priority-${highestPriority}">${highestPriority.replace('-', ' ')}</span>
+                    </div>
+                    <img src="${latestReport.image_url || latestReport.image || 'https://via.placeholder.com/800x600?text=Report'}" alt="${latestReport.title || 'Report'}" class="popup-image" />
+                    <p class="popup-description">Multiple issues reported in this area. Latest: ${latestReport.title}</p>
+                    <div class="popup-meta">
+                        <div class="popup-meta-item">
+                            <i class="fas fa-layer-group"></i> ${count} reports
+                        </div>
+                        <div class="popup-meta-item">
+                            <i class="fas fa-clock"></i> ${timeAgo}
+                        </div>
+                        <div class="popup-meta-item">
+                            <i class="fas fa-exclamation-triangle"></i> ${highestPriority} priority
+                        </div>
+                    </div>
+                    <div class="popup-actions">
+                        <button class="popup-btn" onclick="openClusterDetail(clusters['${cluster.id}'])">View All Reports</button>
+                        <button class="popup-btn secondary" onclick="bulkAssignCluster('${cluster.id}')">Bulk Assign</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Create individual report popup content
+        function createPopupContent(report) {
+            const timeAgo = getTimeAgo(report.timestamp || report.created_at);
+            const priorityClass = `priority-${report.priority}`;
+            const img = report.image_url || report.image || 'https://via.placeholder.com/800x600?text=Report';
+            const desc = report.user_description || report.description || '';
+            const title = report.title || 'Report';
+            
+            return `
+                <div class="popup-content">
+                    <div class="popup-header">
+                        <h4>${title}</h4>
+                        <span class="priority-badge ${priorityClass}">${report.priority.replace('-', ' ')}</span>
+                    </div>
+                    <img src="${img}" alt="${title}" class="popup-image" />
+                    <p class="popup-description">${desc}</p>
+                    <div class="popup-meta">
+                        <div class="popup-meta-item">
+                            <i class="fas fa-map-marker-alt"></i> ${report.city || 'Unknown'}
+                        </div>
+                        <div class="popup-meta-item">
+                            <i class="fas fa-building"></i> ${report.department}
+                        </div>
+                        <div class="popup-meta-item">
+                            <i class="fas fa-info-circle"></i> ${report.status}
+                        </div>
+                    </div>
+                    <div class="popup-actions">
+                        <button class="popup-btn" onclick="assignReport('${report.id}')">Assign</button>
+                        <button class="popup-btn secondary" onclick="openReportDetail(sampleReports.find(r => r.id === '${report.id}'))">Details</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Get highest priority from reports
+        function getHighestPriority(reports) {
+            const priorities = ['very-high', 'high', 'medium', 'low', 'very-low'];
+            for (let priority of priorities) {
+                if (reports.some(r => r.priority === priority)) {
+                    return priority;
+                }
+            }
+            return 'low';
+        }
+
+        // Check if cluster should be shown based on filters
+        function shouldShowCluster(cluster) {
+            return cluster.reports.some(report => shouldShowReport(report));
+        }
+
+        // Check if report should be shown based on filters
+        function shouldShowReport(report) {
+            const af = (window.activeFilters || typeof activeFilters !== 'undefined' ? (window.activeFilters || activeFilters) : { priority: [], departments: [] });
+            const pr = String(report.priority || '').toLowerCase();
+            const dept = String(report.department || '').toLowerCase();
+            const prOk = (!af.priority || af.priority.length === 0 || af.priority.includes(pr) || pr === '' || pr === 'unknown');
+            const deptOk = (!af.departments || af.departments.length === 0 || af.departments.includes(dept) || dept === '');
+            return prOk && deptOk;
+        }
+
+        // Open cluster detail panel
+        function openClusterDetail(cluster) {
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+            
+            title.textContent = `Cluster: ${cluster.address} (${cluster.reports.length} reports)`;
+            
+            // Single-container, professional list of uniform cards
+            const reportsHtml = cluster.reports.map(report => `
+                <div class="report-card" onclick="openReportDetail(sampleReports.find(r => r.id === '${report.id}'))">
+                    <img class="report-image" src="${report.image_url || report.image || 'https://via.placeholder.com/800x600?text=Report'}" alt="${report.title || 'Report'}">
+                    <div class="report-content">
+                        <div>
+                            <div class="report-title">${escapeHtml(report.title || 'Report')}</div>
+                            <div class="report-description">${escapeHtml(report.user_description || report.description || '')}</div>
+                        </div>
+                        <div class="report-meta-grid">
+                            <div class="report-meta-item"><i class="fas fa-clock"></i>${timeAgo(report.created_at || report.timestamp)}</div>
+                            <div class="report-meta-item"><i class="fas fa-map-marker-alt"></i>${report.city || ''}</div>
+                            <div class="report-meta-item"><i class="fas fa-building"></i>${report.department || ''}</div>
+                            <div class="report-meta-item"><i class="fas fa-exclamation-triangle"></i>${(report.priority||'unknown').replace('-', ' ')}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = `
+                <div class="reports-grid">
+                    ${reportsHtml}
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        // Open individual report detail
+        function openReportDetail(report) {
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+            
+            const reportData = typeof report === 'string' ? sampleReports.find(r => r.id === report) : report;
+            const detailTitle = reportData.title || `Report ${reportData.id || ''}`;
+            const img = reportData.image_url || reportData.image || 'https://via.placeholder.com/800x600?text=Report';
+            const desc = reportData.user_description || reportData.description || '';
+
+            title.textContent = detailTitle;
+
+            content.innerHTML = `
+                <div class="report-detail">
+                    <div class="report-detail-header">
+                        <div class="report-id">Report ID: ${reportData.id}</div>
+                        <span class="priority-badge priority-${reportData.priority}">${reportData.priority.replace('-', ' ')}</span>
+                    </div>
+                    <img src="${img}" alt="${detailTitle}" class="report-detail-image" />
+                    <div class="report-section">
+                        <h4>Summary</h4>
+                        <p>${desc}</p>
+                    </div>
+                    <div class="report-section">
+                        <h4>Details</h4>
+                        <div class="detail-grid">
+                            <div>
+                                <div class="detail-label">Department</div>
+                                <div class="detail-value">${reportData.department}</div>
+                            </div>
+                            <div>
+                                <div class="detail-label">City</div>
+                                <div class="detail-value">${reportData.city || ''}</div>
+                            </div>
+                            <div>
+                                <div class="detail-label">Location</div>
+                                <div class="detail-value">${reportData.location || `${reportData.lat || ''}, ${reportData.lng || ''}`}</div>
+                            </div>
+                            <div>
+                                <div class="detail-label">Status</div>
+                                <div class="detail-value">${reportData.status}</div>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="filter-btn btn-primary" onclick="assignReport('${reportData.id}')">Assign to Department</button>
+                            <button class="filter-btn btn-secondary" onclick="changeStatus('${reportData.id}')">Change Status</button>
+                            <button class="filter-btn btn-secondary" onclick="addComment('${reportData.id}')">Add Comment</button>
+                            <button class="filter-btn btn-secondary" onclick="exportReport('${reportData.id}')">Export Report</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        // Utility function to get time ago
+        function getTimeAgo(timestamp) {
+            const now = new Date();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${minutes} min ago`;
+            
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            
+            const days = Math.floor(hours / 24);
+            return `${days}d ago`;
+        }
+
+        // Toggle functions
+        function toggleLeftSidebar() {
+            const sidebar = document.getElementById('leftSidebar');
+            isLeftSidebarOpen = !isLeftSidebarOpen;
+            sidebar.classList.toggle('open', isLeftSidebarOpen);
+        }
+
+        function toggleFilters() {
+            const panel = document.getElementById('rightPanel');
+            isRightPanelOpen = !isRightPanelOpen;
+            panel.classList.toggle('open', isRightPanelOpen);
+        }
+
+        function toggleBottomTray(force = null) {
+            const tray = document.getElementById('bottomTray');
+            if (force !== null) {
+                isBottomTrayOpen = force;
+            } else {
+                isBottomTrayOpen = !isBottomTrayOpen;
+            }
+            tray.classList.toggle('open', isBottomTrayOpen);
+        }
+
+        // Department toggle
+        function toggleDepartment(element, department) {
+            element.classList.toggle('active');
+            
+            if (element.classList.contains('active')) {
+                if (!activeFilters.departments.includes(department)) {
+                    activeFilters.departments.push(department);
+                }
+            } else {
+                activeFilters.departments = activeFilters.departments.filter(d => d !== department);
+            }
+            
+            addMarkersToMap();
+            showToast(`${department} department ${element.classList.contains('active') ? 'shown' : 'hidden'}`, 'info');
+        }
+
+        // Filter functions
+        function applyPreset(element, preset) {
+            document.querySelectorAll('.preset-chips .chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            
+            element.classList.add('active');
+            
+            switch(preset) {
+                case 'high-priority':
+                    activeFilters.priority = ['very-high', 'high'];
+                    updatePriorityBadges();
+                    break;
+                case 'today':
+                    // Filter by today's reports
+                    break;
+                case 'unassigned':
+                    activeFilters.assignment = 'unassigned';
+                    break;
+                case 'potholes':
+                    // Filter by pothole type
+                    break;
+            }
+            
+            addMarkersToMap();
+            showToast(`Applied preset: ${preset.replace('-', ' ')}`, 'success');
+        }
+
+        function updatePriorityBadges() {
+            document.querySelectorAll('.priority-badge').forEach(badge => {
+                badge.classList.remove('active');
+                if (badge.classList.contains('priority-very-high') && activeFilters.priority.includes('very-high')) badge.classList.add('active');
+                if (badge.classList.contains('priority-high') && activeFilters.priority.includes('high')) badge.classList.add('active');
+                if (badge.classList.contains('priority-medium') && activeFilters.priority.includes('medium')) badge.classList.add('active');
+                if (badge.classList.contains('priority-low') && activeFilters.priority.includes('low')) badge.classList.add('active');
+                if (badge.classList.contains('priority-very-low') && activeFilters.priority.includes('very-low')) badge.classList.add('active');
+            });
+        }
+
+        function toggleFilter(element) {
+            element.classList.toggle('active');
+        }
+
+        function togglePriority(element) {
+            element.classList.toggle('active');
+            
+            activeFilters.priority = [];
+            document.querySelectorAll('.priority-badge.active').forEach(badge => {
+                if (badge.classList.contains('priority-very-high')) activeFilters.priority.push('very-high');
+                if (badge.classList.contains('priority-high')) activeFilters.priority.push('high');
+                if (badge.classList.contains('priority-medium')) activeFilters.priority.push('medium');
+                if (badge.classList.contains('priority-low')) activeFilters.priority.push('low');
+                if (badge.classList.contains('priority-very-low')) activeFilters.priority.push('very-low');
+            });
+            
+            addMarkersToMap();
+        }
+
+        function updateConfidenceLabel(value) {
+            document.getElementById('confidenceLabel').textContent = `Minimum confidence: ${value}%`;
+        }
+
+        function applyFilters() {
+            addMarkersToMap();
+            showToast('Filters applied successfully', 'success');
+        }
+
+        function resetFilters() {
+            activeFilters = {
+                priority: ['very-high', 'high', 'medium', 'low', 'very-low'],
+                departments: ['roads', 'water', 'waste', 'lighting', 'parks'],
+                status: 'all',
+                assignment: 'all'
+            };
+            
+            document.querySelectorAll('.priority-badge').forEach(badge => badge.classList.add('active'));
+            document.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
+            document.querySelectorAll('.filter-input').forEach(input => {
+                if (input.type === 'text' || input.type === 'search') input.value = '';
+                if (input.tagName === 'SELECT') input.selectedIndex = 0;
+            });
+            
+            addMarkersToMap();
+            showToast('Filters reset', 'info');
+        }
+
+        function saveFilter() {
+            const filterName = prompt('Enter filter name:');
+            if (filterName) {
+                showToast(`Filter "${filterName}" saved`, 'success');
+            }
+        }
+
+        // Map controls
+        function zoomIn() {
+            map.zoomIn();
+        }
+
+        function zoomOut() {
+            map.zoomOut();
+        }
+
+        function locateUser() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    map.setView([lat, lng], 16);
+                    showToast('Location found', 'success');
+                }, () => {
+                    showToast('Unable to get location', 'error');
+                });
+            } else {
+                showToast('Geolocation not supported', 'error');
+            }
+        }
+
+        function toggleHeatmap() {
+            showToast('Heatmap toggled', 'info');
+        }
+
+        function measureDistance() {
+            showToast('Click on map to measure distance', 'info');
+        }
+
+        function toggleLayers() {
+            showToast('Layer selector opened', 'info');
+        }
+
+        // Report actions
+        function openReport(reportId) {
+            const report = sampleReports.find(r => r.id === reportId);
+            if (report) {
+                openReportDetail(report);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        function assignReport(reportId) {
+            const department = prompt('Assign to department:', 'Roads & Transport');
+            if (department) {
+                showToast(`Report ${reportId} assigned to ${department}`, 'success');
+                closeModal();
+            }
+        }
+
+        function bulkAssignCluster(clusterId) {
+            const department = prompt('Assign entire cluster to department:', 'Roads & Transport');
+            if (department) {
+                showToast(`All reports in cluster ${clusterId} assigned to ${department}`, 'success');
+                closeModal();
+            }
+        }
+
+        function changeStatus(reportId) {
+            const status = prompt('New status:', 'In Progress');
+            if (status) {
+                showToast(`Report ${reportId} status changed to ${status}`, 'success');
+            }
+        }
+
+        function addComment(reportId) {
+            const comment = prompt('Add comment:');
+            if (comment) {
+                showToast('Comment added successfully', 'success');
+            }
+        }
+
+        function exportReport(reportId) {
+            showToast(`Exporting report ${reportId}...`, 'info');
+        }
+
+        // Quick actions
+        function createManualReport() {
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+            
+            title.textContent = 'Create Manual Report';
+            content.innerHTML = `
+                <form class="create-report-form">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" class="filter-input" placeholder="Brief description of the issue" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea class="filter-input" rows="4" placeholder="Detailed description of the problem" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Issue Type</label>
+                        <select class="filter-input" required>
+                            <option value="">Select issue type</option>
+                            <option value="pothole">Pothole</option>
+                            <option value="streetlight">Street Light</option>
+                            <option value="garbage">Garbage</option>
+                            <option value="water">Water Issue</option>
+                            <option value="traffic">Traffic</option>
+                            <option value="parks">Parks</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select class="filter-input" required>
+                            <option value="">Select priority</option>
+                            <option value="very-high">Very High</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                            <option value="very-low">Very Low</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select class="filter-input" required>
+                            <option value="">Select department</option>
+                            <option value="roads">Roads & Transport</option>
+                            <option value="water">Water & Sewage</option>
+                            <option value="waste">Waste Management</option>
+                            <option value="lighting">Public Lighting</option>
+                            <option value="parks">Parks & Recreation</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" class="filter-input" placeholder="Click on map or enter address" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Image</label>
+                        <input type="file" class="filter-input" accept="image/*">
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="filter-btn btn-primary" onclick="submitReport()">Create Report</button>
+                        <button type="button" class="filter-btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    </div>
+                </form>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        async function submitReport() {
+            try {
+                const modal = document.getElementById('modalOverlay');
+                const form = modal.querySelector('.create-report-form');
+                if (!form || !window.createReportInFirestore) { closeModal(); return; }
+                const title = form.querySelector('input[placeholder="Brief description of the issue"]').value.trim();
+                const description = form.querySelector('textarea').value.trim();
+                const deptInput = form.querySelector('select') ? form.querySelector('select').value : '';
+                const cityInput = form.querySelector('input[type="text"]').value.trim();
+                const latInput = form.querySelector('input[placeholder*="Latitude"]')?.value.trim();
+                const lngInput = form.querySelector('input[placeholder*="Longitude"]')?.value.trim();
+                const imageUrl = '';
+                const location = latInput && lngInput ? `${latInput},${lngInput}` : (cityInput || '');
+                const report = {
+                    title: title || 'Manual Report',
+                    user_description: description,
+                    department: (deptInput || '').toLowerCase() || null,
+                    city: cityInput || 'Unknown',
+                    location: location,
+                    status: 'pending',
+                    image_url: imageUrl,
+                    priority: 'unknown',
+                    type: 'manual'
+                };
+                await window.createReportInFirestore(report);
+                showToast('Report created successfully', 'success');
+                closeModal();
+            } catch (e) {
+                console.error('Create report failed', e);
+                showToast('Failed to create report', 'error');
+            }
+        }
+
+        function bulkAssign() {
+            showToast('Bulk assignment mode activated - Select reports from map', 'info');
+        }
+
+        function exportData() {
+            showToast('Exporting filtered data as CSV...', 'info');
+            setTimeout(() => {
+                showToast('Export completed successfully', 'success');
+            }, 2000);
+        }
+
+        function showNotifications() {
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+            
+            title.textContent = 'Recent Notifications';
+            content.innerHTML = `
+                <div class="notifications-list">
+                    <div class="notification-item">
+                        <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                        <div class="notification-content">
+                            <div class="notification-title">Critical Issue: Major Water Pipe Burst</div>
+                            <p class="notification-message">Large water pipe burst in residential area causing flooding - requires immediate emergency response</p>
+                            <div class="notification-time">2 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <i class="fas fa-user-plus" style="color: #3b82f6;"></i>
+                        <div class="notification-content">
+                            <div class="notification-title">Assignment Completed</div>
+                            <p class="notification-message">Street light repair cluster successfully assigned to Lighting Department team</p>
+                            <div class="notification-time">15 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <i class="fas fa-check-circle" style="color: #22c55e;"></i>
+                        <div class="notification-content">
+                            <div class="notification-title">Report Resolved</div>
+                            <p class="notification-message">Garbage collection completed in Sector 5 - all overflow issues resolved</p>
+                            <div class="notification-time">1 hour ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <i class="fas fa-bell" style="color: #f59e0b;"></i>
+                        <div class="notification-content">
+                            <div class="notification-title">High Priority Alert</div>
+                            <p class="notification-message">Multiple pothole reports received from MG Road junction area</p>
+                            <div class="notification-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <i class="fas fa-chart-line" style="color: #8b5cf6;"></i>
+                        <div class="notification-content">
+                            <div class="notification-title">Weekly Report Generated</div>
+                            <p class="notification-message">Weekly civic issues analytics report is now available for download</p>
+                            <div class="notification-time">1 day ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <i class="fas fa-tools" style="color: #6366f1;"></i>
+                        <div class="notification-content">
+                            <div class="notification-title">Maintenance Scheduled</div>
+                            <p class="notification-message">Regular maintenance scheduled for Central Square park facilities</p>
+                            <div class="notification-time">2 days ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <i class="fas fa-users" style="color: #10b981;"></i>
+                        <div class="notification-content">
+                            <div class="notification-title">Department Update</div>
+                            <p class="notification-message">New team members added to Water & Sewage department</p>
+                            <div class="notification-time">3 days ago</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 
+                        type === 'error' ? 'exclamation-circle' : 'info-circle';
+            
+            toast.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.4s ease forwards';
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 400);
+            }, 4000);
+        }
+
+        
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            // Realtime updates via Firestore listener (defined in module script below)
+            if (window.setupRealtimeReports) {
+                window.setupRealtimeReports();
+            }
+            // Bottom tray horizontal scroll with mouse wheel when hovered
+            const tray = document.getElementById('bottomTray');
+            if (tray) {
+                tray.addEventListener('wheel', function(e){
+                    if (e.deltaY !== 0) {
+                        tray.scrollLeft += e.deltaY;
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'b') {
+                    e.preventDefault();
+                    toggleLeftSidebar();
+                }
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    toggleFilters();
+                }
+                if (e.key === 'Escape') {
+                    if (document.getElementById('modalOverlay').classList.contains('active')) {
+                        closeModal();
+                    }
+                }
+            });
+            
+            // Add click outside to close panels
+            document.addEventListener('click', function(e) {
+                const sidebar = document.getElementById('leftSidebar');
+                const panel = document.getElementById('rightPanel');
+                const hamburger = document.querySelector('.hamburger-btn');
+                const filterBtn = document.querySelector('.fa-filter')?.parentElement;
+                
+                if (isLeftSidebarOpen && !sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+                    toggleLeftSidebar();
+                }
+                
+                if (isRightPanelOpen && !panel.contains(e.target) && filterBtn && !filterBtn.contains(e.target)) {
+                    toggleFilters();
+                }
+            });
+
+            // Add search functionality
+            const searchInput = document.querySelector('.search-input');
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const query = e.target.value.trim();
+                    if (query) {
+                        showToast(`Searching for: ${query}`, 'info');
+                        // Implement search logic here
+                    }
+                }
+            });
+
+            // Add smooth scroll behavior for better UX
+            document.documentElement.style.scrollBehavior = 'smooth';
+            
+            // Welcome handled on first realtime snapshot
+        });
+
+        // Add window resize handler for responsive behavior
+        window.addEventListener('resize', function() {
+            if (map) {
+                map.invalidateSize();
+            }
+            
+            // Auto-close panels on mobile
+            if (window.innerWidth <= 768) {
+                if (isLeftSidebarOpen) toggleLeftSidebar();
+                if (isRightPanelOpen) toggleFilters();
+            }
+        });
+
+        // Add performance monitoring
+        if ('performance' in window) {
+            window.addEventListener('load', function() {
+                const loadTime = performance.now();
+                console.log(`Dashboard loaded in ${Math.round(loadTime)}ms`);
+            });
+        }
+
+        // Add service worker for offline support (basic)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // Service worker registration could be added here
+            });
+        }
+        
+        // User menu & logout
+        function toggleUserMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('userMenu');
+            menu.classList.toggle('open');
+        }
+        function logout() {
+            window.location.href = '/logout/';
+        }
+        // Close user menu on outside click
+        document.addEventListener('click', function(e){
+            const menu = document.getElementById('userMenu');
+            const btn = document.getElementById('userBtn');
+            if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>
