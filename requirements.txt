@@ -3,4 +3,4 @@ firebase_admin==7.1.0
 protobuf==6.32.1
 gunicorn
 gradio_client==1.13.0 
-google-generativeai==0.8.5
+google-generativeai
