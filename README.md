@@ -1,12 +1,4 @@
-<table>
-  <tr>
-    <td><img src="media/1.jpg" alt="CivicSetu Logo" width="120" height="120" /></td>
-    <td style="text-align: right; vertical-align: middle; font-size: 48px; font-weight: bold;">
-      CivicSetu
-    </td>
-  </tr>
-</table>
-
+## CivicSetu <img src="media/1.jpg" alt="CivicSetu Logo" width="120" height="120" style="float: right; margin-left: 20px;" />
 *A Crowdsourced Civic Issue Reporting and Resolution System*
 
 ***
