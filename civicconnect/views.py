@@ -43,9 +43,9 @@ _JOY_API = "/stream_chat"
 _listener_started = False
 _listener_unsubscribe = None
 
-# Gemini API (optional)
+# Gemini API (v1)
 try:
-    import google.generativeai as genai
+    from google import genai  # modern client
 except Exception:
     genai = None
 
@@ -137,12 +137,8 @@ def start_report_caption_listener():
     except Exception:
         logger.exception("Failed to start report caption listener")
 
-# Try to start the listener when the module is imported (server start)
-try:
-    start_report_caption_listener()
-except Exception:
-    # Will try again upon first dashboard access
-    logger.warning("Deferred starting report caption listener; will retry on first dashboard request.")
+# Do NOT start Firestore listeners at import time in production workers.
+# They will be started lazily from the first dashboard request.
 
 def root_redirect(request):
     if request.session.get('admin_user'):
