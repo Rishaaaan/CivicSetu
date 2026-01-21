@@ -534,7 +534,7 @@ CONSTRAINTS TO CONSIDER:
 Generate practical solutions that Indian civic authorities can realistically implement given their resource constraints and bureaucratic processes.
 """
         
-        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-1.5-flash')
+        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-pro')
         model = genai.GenerativeModel(model_name)
         
         # Enhanced generation configuration for better output
