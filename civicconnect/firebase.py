@@ -2,9 +2,10 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import uuid
 from datetime import datetime
+from .credentials_util import get_service_account_path
 
 # Initialize Firebase only once
-cred = credentials.Certificate("civicconnect/civicconnect-2c5cb-1802f4750caa.json")
+cred = credentials.Certificate(get_service_account_path())
 try:
     firebase_admin.get_app()
 except ValueError:

@@ -1,23 +1,14 @@
 import os
 import sys
-import glob
 from datetime import datetime
 
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-
-
-def find_service_account_json(base_dir: str) -> str:
-    candidates = glob.glob(os.path.join(base_dir, 'civicconnect', '*firebase-adminsdk-*.json'))
-    if candidates:
-        return candidates[0]
-    return os.path.join(base_dir, 'civicconnect', 'civicconnect-2c5cb-1802f4750caa.json')
-
+from civicconnect.credentials_util import get_service_account_path
 
 def init_firestore():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    sa_path = find_service_account_json(base_dir)
+    sa_path = get_service_account_path()
     if not os.path.exists(sa_path):
         print(f"Service account JSON not found: {sa_path}")
         sys.exit(1)

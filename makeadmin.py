@@ -1,8 +1,9 @@
 import firebase_admin
 from firebase_admin import credentials, auth
+from civicconnect.credentials_util import get_service_account_path
 
 # Use your service account JSON file (the same one you use in Django)
-cred = credentials.Certificate("civicconnect\civicconnect-2c5cb-1802f4750caa.json")
+cred = credentials.Certificate(get_service_account_path())
 firebase_admin.initialize_app(cred)
 
 # Now set the admin claim

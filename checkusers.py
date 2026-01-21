@@ -1,8 +1,9 @@
 import firebase_admin
 from firebase_admin import credentials, auth
+from civicconnect.credentials_util import get_service_account_path
 
 # Initialize Firebase Admin SDK (replace with your credentials path)
-cred = credentials.Certificate("civicconnect/civicconnect-2c5cb-1802f4750caa.json")
+cred = credentials.Certificate(get_service_account_path())
 firebase_admin.initialize_app(cred)
 
 def list_all_users():
