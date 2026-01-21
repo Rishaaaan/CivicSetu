@@ -12,7 +12,7 @@ def find_service_account_json(base_dir: str) -> str:
     candidates = glob.glob(os.path.join(base_dir, 'civicconnect', '*firebase-adminsdk-*.json'))
     if candidates:
         return candidates[0]
-    return os.path.join(base_dir, 'civicconnect', 'civicconnect-2c5cb-firebase-adminsdk-fbsvc-8f12e03b0f.json')
+    return os.path.join(base_dir, 'civicconnect', 'civicconnect-2c5cb-1802f4750caa.json')
 
 
 def init_firestore():

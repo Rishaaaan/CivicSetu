@@ -518,7 +518,7 @@ Provide exactly 3-5 solutions in this structured format:
 1. [Specific action step]
 2. [Specific action step] 
 3. [Specific action step]
-
+Summary and a brief detail
 **Responsible Department:** [Primary department/authority]
 **Budget Estimate:** [Low: <₹1 lakh | Medium: ₹1-10 lakhs | High: >₹10 lakhs]
 **Timeline:** [Immediate/Short-term/Long-term]

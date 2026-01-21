@@ -14,7 +14,7 @@ def find_service_account_json(base_dir: str) -> str:
     if candidates:
         return candidates[0]
     # Fallback to a known filename
-    fallback = os.path.join(base_dir, 'civicconnect', 'civicconnect-2c5cb-firebase-adminsdk-fbsvc-8f12e03b0f.json')
+    fallback = os.path.join(base_dir, 'civicconnect', 'civicconnect-2c5cb-1802f4750caa.json')
     return fallback
 
 

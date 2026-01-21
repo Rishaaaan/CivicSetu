@@ -2206,6 +2206,28 @@
             }
         }
 
+        // Reject report: mark rejected=true in Firestore
+        window.rejectReport = async function(reportId) {
+            try {
+                const btns = Array.from(document.querySelectorAll(`button[onclick^=\"rejectReport('${reportId}')\"]`));
+                btns.forEach(b=>{ b.disabled = true; b.textContent = 'Rejecting...'; });
+                await window.updateReportFields(reportId, { rejected: true });
+                // update local cache
+                try {
+                    const r = (window.sampleReports||[]).find(x=>x.id===reportId);
+                    if (r) r.rejected = true;
+                } catch {}
+                // update buttons UI
+                btns.forEach(b=>{ b.disabled = true; b.textContent = 'Rejected'; });
+                showToast('Report marked as rejected', 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Failed to reject report', 'error');
+                const btns = Array.from(document.querySelectorAll(`button[onclick^=\"rejectReport('${reportId}')\"]`));
+                btns.forEach(b=>{ b.disabled = false; b.textContent = 'Reject Report'; });
+            }
+        }
+
         window.changeStatus = async function(reportId) {
             if (window.currentUserRole === 'admin') {
                 if (typeof showToast === 'function') showToast('Only department heads can change status', 'error');
@@ -2838,7 +2860,10 @@
                 <div class="report-detail" style="padding: 3px; overflow-y: auto;">
                     <div class="report-detail-header">
                         <div class="report-id">Report ID: ${reportData.id}</div>
-                        <span class="priority-badge priority-${reportData.priority}">${reportData.priority.replace('-', ' ')}</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="priority-badge priority-${reportData.priority}">${reportData.priority.replace('-', ' ')}</span>
+                            <button class="filter-btn btn-secondary" onclick="rejectReport('${reportData.id}')" ${reportData.rejected ? 'disabled' : ''} title="Mark this report as rejected">${reportData.rejected ? 'Rejected' : 'Reject Report'}</button>
+                        </div>
                     </div>
                     <div class="report-layout">
                         <div class="media-column">

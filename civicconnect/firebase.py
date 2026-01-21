@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 # Initialize Firebase only once
-cred = credentials.Certificate("civicconnect/civicconnect-2c5cb-firebase-adminsdk-fbsvc-8f12e03b0f.json")
+cred = credentials.Certificate("civicconnect/civicconnect-2c5cb-1802f4750caa.json")
 try:
     firebase_admin.get_app()
 except ValueError:
