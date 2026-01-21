@@ -458,44 +458,55 @@ def api_increment_report_count(request):
     except Exception as e:
         return JsonResponse({'ok': False, 'error': 'failed_to_increment'}, status=500)
 
+from google import genai
+from google.genai import types
+from django.http import JsonResponse, HttpResponseForbidden
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 @csrf_exempt
 @require_POST
 def api_generate_fix_suggestions(request):
     """
-    Generate ways to fix the issue using Gemini given image_caption and user_description.
+    Generate ways to fix the issue using Gemini (v1 API).
     Saves the result to Firestore on the same report document.
     """
+
     # Require staff (admin or department_head)
     user = request.session.get('admin_user') or {}
-    if not (user and (user.get('role') in ('admin', 'department_head'))):
+    if not (user and user.get('role') in ('admin', 'department_head')):
         return HttpResponseForbidden('Auth required')
-    
+
     report_id = request.POST.get('report_id')
     image_caption = request.POST.get('image_caption') or ''
     user_description = request.POST.get('user_description') or ''
-    
+
     if not report_id:
         return JsonResponse({'ok': False, 'error': 'missing_report_id'}, status=400)
-    
-    if genai is None:
-        logger.error('google-generativeai not installed; cannot call Gemini')
-        return JsonResponse({'ok': False, 'error': 'gemini_not_available'}, status=500)
-    
+
     try:
+        # --- API KEY RESOLUTION ---
         api_key = (
             os.environ.get('GOOGLE_GENAI_API_KEY') or
             os.environ.get('GEMINI_API_KEY') or
             getattr(settings, 'GOOGLE_GENAI_API_KEY', None) or
             getattr(settings, 'GEMINI_API_KEY', None)
         )
-        
+
         if not api_key:
-            logger.error('Gemini API key missing. Set GOOGLE_GENAI_API_KEY or GEMINI_API_KEY')
+            logger.error('Gemini API key missing')
             return JsonResponse({'ok': False, 'error': 'missing_api_key'}, status=500)
-        
-        genai.configure(api_key=api_key)
-        
-        # Enhanced prompt with proper structure and Indian government context
+
+        # --- NEW GEMINI CLIENT (v1) ---
+        client = genai.Client(api_key=api_key)
+
+        # --- PROMPT ---
         prompt = f"""
 You are an expert advisor for Indian municipal and government agencies. Analyze the following civic issue and provide actionable solutions.
 
@@ -516,63 +527,71 @@ Provide exactly 3-5 solutions in this structured format:
 
 **Steps:**
 1. [Specific action step]
-2. [Specific action step] 
+2. [Specific action step]
 3. [Specific action step]
-Summary and a brief detail
-**Responsible Department:** [Primary department/authority]
-**Budget Estimate:** [Low: <₹1 lakh | Medium: ₹1-10 lakhs | High: >₹10 lakhs]
-**Timeline:** [Immediate/Short-term/Long-term]
+
+**Responsible Department:** [Primary department/authority]  
+**Budget Estimate:** [Low: <₹1 lakh | Medium: ₹1-10 lakhs | High: >₹10 lakhs]  
+**Timeline:** [Immediate/Short-term/Long-term]  
 **Funding Source:** [Municipal/State scheme/Central scheme]
 
-CONSTRAINTS TO CONSIDER:
-- Prioritize cost-effective, locally implementable solutions
-- Consider monsoon impact and Indian weather conditions
-- Include community participation where applicable
-- Mention any required approvals or clearances
-- Focus on sustainable, maintenance-friendly approaches
-
-Generate practical solutions that Indian civic authorities can realistically implement given their resource constraints and bureaucratic processes.
+CONSTRAINTS:
+- Cost-effective and locally implementable
+- Consider monsoon and Indian weather
+- Community participation where applicable
+- Required approvals if any
+- Sustainable & low-maintenance
 """
-        
-        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-pro')
-        model = genai.GenerativeModel(model_name)
-        
-        # Enhanced generation configuration for better output
-        generation_config = {
-            'temperature': 0.3,  # Lower temperature for more focused, practical responses
-            'top_p': 0.8,
-            'top_k': 40,
-            'max_output_tokens': 2048,
-        }
-        
-        logger.info('Calling Gemini for report_id=%s with enhanced prompt', report_id)
-        resp = model.generate_content(prompt, generation_config=generation_config)
-        
-        text = (getattr(resp, 'text', None) or '').strip()
-        if not text and hasattr(resp, 'candidates') and resp.candidates:
-            text = getattr(resp.candidates[0].content.parts[0], 'text', '')
-        
+
+        logger.info('Calling Gemini (v1) for report_id=%s', report_id)
+
+        # --- GEMINI CALL ---
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.3,
+                top_p=0.8,
+                max_output_tokens=2048,
+            ),
+        )
+
+        text = (response.text or '').strip()
+
         if not text:
             logger.error('Gemini returned empty response for report_id=%s', report_id)
             return JsonResponse({'ok': False, 'error': 'empty_response'}, status=502)
-        
-        # Save back to Firestore
+
+        # --- SAVE TO FIRESTORE ---
         try:
             db.collection('reports').document(report_id).update({
                 'ai_fix_suggestions': text,
                 'ai_fix_generated_at': timezone.now(),
-                'ai_prompt_version': 'v2_structured',  # Track prompt version for analytics
+                'ai_prompt_version': 'v3_gemini_v1',
             })
-            logger.info('Saved structured ai_fix_suggestions for report_id=%s (len=%d)', report_id, len(text))
-        except Exception as uex:
-            logger.exception('Failed saving ai_fix_suggestions for report_id=%s: %s', report_id, uex)
-            # Still return to show the result in UI
-        
+            logger.info(
+                'Saved ai_fix_suggestions for report_id=%s (len=%d)',
+                report_id,
+                len(text),
+            )
+        except Exception as save_err:
+            logger.exception(
+                'Failed saving ai_fix_suggestions for report_id=%s: %s',
+                report_id,
+                save_err,
+            )
+            # Still return the result
+
         return JsonResponse({'ok': True, 'suggestions': text})
-        
+
     except Exception as e:
-        logger.exception('Gemini generation failed for report_id=%s: %s', report_id, e)
+        logger.exception(
+            'Gemini generation failed for report_id=%s: %s',
+            report_id,
+            e,
+        )
         return JsonResponse({'ok': False, 'error': 'generation_failed'}, status=500)
+
 
 
 def analytics_dashboard(request):
