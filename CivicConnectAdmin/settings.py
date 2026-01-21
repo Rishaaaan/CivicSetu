@@ -11,10 +11,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-HUGGINGFACEHUB_API_TOKEN="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"
+HUGGINGFACEHUB_API_TOKEN=os.environ.get("HUGGINGFACEHUB_API_TOKEN")
 GEMINI_API_KEY="AIzaSyBzNCpeM6pAnjq9TXevtdrXxBv1FSjseYo"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
