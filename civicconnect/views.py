@@ -458,7 +458,6 @@ def api_increment_report_count(request):
     except Exception as e:
         return JsonResponse({'ok': False, 'error': 'failed_to_increment'}, status=500)
 
-from google import genai
 from google.genai import types
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
