@@ -23,6 +23,7 @@
 - **Admin Credentials (Demo):**  
   - **Username:** admintester00@gmail.com  
   - **Password:** AdminTester00  
+- **CivicSetu APK download:** https://github.com/Rishaaaan/CivicSetu/releases/download/CivicSetuAPPv1.0/app-debug.apk
 
 ***
 
