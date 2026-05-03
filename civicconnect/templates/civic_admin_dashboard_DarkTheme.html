@@ -2372,12 +2372,12 @@
         const clusters = {};
 
         // Initialize the map
-        let baseLight, baseDark;
+       let baseLight, baseDark;
         
         function initMap() {
             map = L.map('map').setView([28.6139, 77.2090], 14);
         
-            // Alternative tile servers (less strict than main OSM)
+            // Light theme
             baseLight = L.tileLayer(
                 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
                 {
@@ -2386,8 +2386,9 @@
                 }
             );
         
+            // Dark theme (fake using CSS filter)
             baseDark = L.tileLayer(
-                'https://tiles.stadiamaps.com/tiles/alidade_dark/{z}/{x}/{y}.png',
+                'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
                 {
                     attribution: '&copy; OpenStreetMap contributors',
                     maxZoom: 19
@@ -2398,6 +2399,10 @@
         
             if (theme === 'dark') {
                 baseDark.addTo(map);
+        
+                // apply dark effect
+                document.querySelector('.leaflet-tile-pane').style.filter =
+                    "invert(1) hue-rotate(180deg)";
             } else {
                 baseLight.addTo(map);
             }
