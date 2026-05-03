@@ -2373,30 +2373,39 @@
 
         // Initialize the map
         let baseLight, baseDark;
+        
         function initMap() {
             map = L.map('map').setView([28.6139, 77.2090], 14);
-            // Prepare base layers
-            baseDark = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
-            });
-            baseLight = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
-            });
-
-            // Add layer according to theme
+        
+            // Alternative tile servers (less strict than main OSM)
+            baseLight = L.tileLayer(
+                'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+                {
+                    attribution: '&copy; OpenStreetMap contributors',
+                    maxZoom: 19
+                }
+            );
+        
+            baseDark = L.tileLayer(
+                'https://tiles.stadiamaps.com/tiles/alidade_dark/{z}/{x}/{y}.png',
+                {
+                    attribution: '&copy; OpenStreetMap contributors',
+                    maxZoom: 19
+                }
+            );
+        
             const theme = document.documentElement.getAttribute('data-theme') || 'light';
-            if (theme === 'dark') { baseDark.addTo(map); } else { baseLight.addTo(map); }
-
-            // Markers will be added after reports are fetched
-            
-            // Show bottom tray by default after a delay
+        
+            if (theme === 'dark') {
+                baseDark.addTo(map);
+            } else {
+                baseLight.addTo(map);
+            }
+        
             setTimeout(() => {
                 toggleBottomTray(true);
             }, 1500);
         }
-
         // Haversine distance (meters)
         function distanceMeters(lat1, lon1, lat2, lon2) {
             const R = 6371000; // meters
