@@ -73,7 +73,7 @@ Simple, mobile-first design ensures users and admins can move between sections e
   <img src="media/image6.jpeg" alt="Filtering Reports" style="width:100%;height:auto;display:block;" />
 </div>
 
-### Navigation
+### Navigations
 
 <div align="center" style="width:100%;max-width:1200px;margin:0 auto;">
   <img src="media/image7.jpeg" alt="Navigation" style="width:100%;height:auto;display:block;" />
